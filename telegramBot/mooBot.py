@@ -16,9 +16,15 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-from telegramBot.private import get_token
+from threading import Thread
+
+from telegram import InlineQueryResultArticle, InputTextMessageContent
+from telegram.ext import InlineQueryHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+from private import get_token
+from getMoodle.Homework import homework
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -38,11 +44,39 @@ def help(bot, update):
 
 
 def echo(bot, update):
+    if "peasant" in update.message.text.lower():
+        update.message.reply_text("What may I do for you?")
+    elif "homework" in update.message.text.lower():
+        thread = Thread(target=async_reply, args=(update,))
+        thread.start()
+    else:
+        update.message.reply_text(update.message.text)
 
-    update.message.reply_text(update.message.text)
 
 
+def async_reply(update):
+    update.message.reply_text("Just a sec, let me check it for you")
+    home = homework()
+    update.message.reply_text(home)
 
+
+def caps(bot, update, args):
+    update.message.reply_text(' '.join(args).upper())
+
+
+def inline_caps(bot, update):
+    query = update.inline_query.query
+    if not query:
+        return
+    results = list()
+    results.append(
+        InlineQueryResultArticle(
+            id=query.upper(),
+            title='Caps',
+            input_message_content=InputTextMessageContent(query.upper())
+        )
+    )
+    bot.answerInlineQuery(update.inline_query.id, results)
 
 def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"' % (update, error))
@@ -58,6 +92,10 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("caps", caps, pass_args=True))
+
+    # must be last
+    dp.add_handler(InlineQueryHandler(inline_caps))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
