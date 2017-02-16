@@ -5,7 +5,7 @@
 test.py
 
 # Credentials and stuff
-telegramBot/private.py
+private.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
