@@ -22,6 +22,7 @@ from threading import Thread
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import InlineQueryHandler
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext.dispatcher import run_async
 
 from private import get_token
 from getMoodle.Homework import homework
@@ -47,14 +48,13 @@ def echo(bot, update):
     if "peasant" in update.message.text.lower():
         update.message.reply_text("What may I do for you?")
     elif "homework" in update.message.text.lower():
-        thread = Thread(target=async_reply, args=(update,))
-        thread.start()
+        async_reply(bot, update)
     else:
         update.message.reply_text(update.message.text)
 
 
-
-def async_reply(update):
+@run_async
+def async_reply(bot, update):
     update.message.reply_text("Just a sec, let me check it for you")
     home = homework()
     update.message.reply_text(home)
@@ -92,6 +92,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("homework", async_reply))
     dp.add_handler(CommandHandler("caps", caps, pass_args=True))
 
     # must be last
